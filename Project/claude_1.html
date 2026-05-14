@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>학점을 잡아라!</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@300;400;700;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a14;
+    --surface: #12121f;
+    --card: #1a1a2e;
+    --accent: #e94560;
+    --accent2: #f5a623;
+    --accent3: #00d4aa;
+    --accent4: #7b68ee;
+    --text: #f0f0f8;
+    --text-muted: #7a7a9a;
+    --border: #2a2a4a;
+    --glow: rgba(233,69,96,0.4);
+    --glow2: rgba(245,166,35,0.4);
+    --glow3: rgba(0,212,170,0.4);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    min-height: 100vh;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(233,69,96,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(233,69,96,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: gridMove 20s linear infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  @keyframes gridMove {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(40px); }
+  }
+
+  /* ── SCREENS ── */
+  .screen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: opacity .5s, transform .5s;
+  }
+  .screen.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.96);
+  }
+
+  /* ── START SCREEN ── */
+  #startScreen .content {
+    text-align: center;
+    z-index: 1;
+  }
+  .game-title {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: clamp(2.5rem, 8vw, 5.5rem);
+    line-height: 1;
+    color: var(--text);
+    text-shadow: 0 0 40px var(--glow), 0 0 80px var(--glow);
+    animation: titlePulse 3s ease-in-out infinite;
+    letter-spacing: -2px;
+  }
+  .game-title span {
+    color: var(--accent);
+    display: block;
+    font-size: 1.2em;
+  }
+  @keyframes titlePulse {
+    0%,100% { text-shadow: 0 0 40px var(--glow), 0 0 80px var(--glow); }
+    50% { text-shadow: 0 0 60px var(--glow), 0 0 120px var(--glow), 0 0 200px rgba(233,69,96,0.2); }
+  }
+  .subtitle {
+    font-size: .9rem;
+    color: var(--text-muted);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin: 1rem 0 3rem;
+    animation: fadeIn 1s ease .5s both;
+  }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+
+  .nickname-box {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    animation: fadeIn 1s ease 1s both;
+  }
+  .nickname-input {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 20px;
+    font-size: 1.1rem;
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    width: 240px;
+    outline: none;
+    transition: border-color .3s, box-shadow .3s;
+  }
+  .nickname-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 20px var(--glow);
+  }
+  .nickname-input::placeholder { color: var(--text-muted); }
+
+  .btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 28px;
+    font-size: 1rem;
+    font-family: 'Black Han Sans', sans-serif;
+    cursor: pointer;
+    transition: transform .2s, box-shadow .2s;
+    letter-spacing: 1px;
+  }
+  .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px var(--glow);
+  }
+  .btn:active { transform: translateY(0); }
+  .btn.green { background: var(--accent3); }
+  .btn.green:hover { box-shadow: 0 8px 24px var(--glow3); }
+  .btn.purple { background: var(--accent4); }
+  .btn.yellow { background: var(--accent2); color: #111; }
+  .btn.yellow:hover { box-shadow: 0 8px 24px var(--glow2); }
+
+  /* ── SLOT SCREEN ── */
+  #slotScreen .content {
+    text-align: center;
+    z-index: 1;
+    width: 100%;
+    max-width: 900px;
+    padding: 20px;
+  }
+  .slot-title {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: clamp(1.5rem,4vw,2.5rem);
+    margin-bottom: .5rem;
+    color: var(--accent2);
+    text-shadow: 0 0 20px var(--glow2);
+  }
+  .slot-subtitle {
+    color: var(--text-muted);
+    font-size: .85rem;
+    margin-bottom: 2rem;
+    letter-spacing: 2px;
+  }
+  .slots-container {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin: 2rem 0;
+    flex-wrap: wrap;
+  }
+  .slot {
+    width: 110px;
+    height: 130px;
+    background: var(--card);
+    border: 3px solid var(--border);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 2.2rem;
+    color: var(--text);
+    position: relative;
+    overflow: hidden;
+    transition: border-color .3s, box-shadow .3s;
+  }
+  .slot .slot-label {
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: .65rem;
+    color: var(--text-muted);
+    margin-top: 6px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  .slot.spinning .slot-num {
+    animation: slotSpin .1s linear infinite;
+  }
+  .slot.done-3 { border-color: var(--accent); box-shadow: 0 0 20px var(--glow); }
+  .slot.done-2 { border-color: var(--accent2); box-shadow: 0 0 20px var(--glow2); }
+  .slot.done-1 { border-color: var(--accent3); box-shadow: 0 0 20px var(--glow3); }
+  .slot.current { border-color: white; animation: slotPulse .6s ease-in-out infinite; }
+  @keyframes slotPulse {
+    0%,100%{box-shadow:0 0 10px rgba(255,255,255,.3)}
+    50%{box-shadow:0 0 30px rgba(255,255,255,.8)}
+  }
+  @keyframes slotSpin {
+    0%{transform:translateY(-4px)}50%{transform:translateY(4px)}100%{transform:translateY(-4px)}
+  }
+
+  .slot-result-strip {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin: 1rem 0;
+    flex-wrap: wrap;
+  }
+  .credit-badge {
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: .8rem;
+    font-weight: 700;
+    background: var(--card);
+    border: 2px solid var(--border);
+    color: var(--text-muted);
+  }
+  .credit-badge.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+    box-shadow: 0 0 12px var(--glow);
+  }
+
+  /* ── HUD ── */
+  #hud {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 100;
+    background: rgba(26,26,46,0.9);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 18px;
+    backdrop-filter: blur(10px);
+    font-size: .75rem;
+    text-align: right;
+    display: none;
+    min-width: 150px;
+  }
+  #hud .hud-nickname {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 1rem;
+    color: var(--accent2);
+    margin-bottom: 4px;
+  }
+  .hud-credits {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+  .hud-credit {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 3px 8px;
+    font-size: .7rem;
+    color: var(--text-muted);
+  }
+  .hud-credit.c3 { border-color: var(--accent); color: var(--accent); }
+  .hud-credit.c2 { border-color: var(--accent2); color: var(--accent2); }
+  .hud-credit.c1 { border-color: var(--accent3); color: var(--accent3); }
+
+  /* ── GAME SCREEN ── */
+  #gameScreen .content {
+    z-index: 1;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .game-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    background: rgba(18,18,31,0.95);
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(10px);
+  }
+  .game-info-left {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 1.1rem;
+    color: var(--accent2);
+  }
+  .game-stats {
+    display: flex;
+    gap: 20px;
+    font-size: .85rem;
+  }
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .stat-label { color: var(--text-muted); font-size: .7rem; letter-spacing: 1px; }
+  .stat-value { font-family: 'Press Start 2P', monospace; font-size: .9rem; color: var(--accent); }
+
+  #gameCanvas {
+    flex: 1;
+    display: block;
+    width: 100%;
+  }
+
+  /* ── GRADE SCREEN (between games) ── */
+  #gradeScreen .content {
+    text-align: center;
+    z-index: 1;
+    max-width: 480px;
+    width: 90%;
+  }
+  .grade-display {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(4rem, 15vw, 8rem);
+    line-height: 1;
+    margin: 1rem 0;
+    animation: gradeIn .5s cubic-bezier(0.175,0.885,0.32,1.275) both;
+  }
+  .grade-A { color: var(--accent3); text-shadow: 0 0 40px var(--glow3); }
+  .grade-B { color: var(--accent2); text-shadow: 0 0 40px var(--glow2); }
+  .grade-C { color: var(--accent4); text-shadow: 0 0 40px rgba(123,104,238,.4); }
+  @keyframes gradeIn {
+    from{opacity:0;transform:scale(0.3) rotate(-20deg)}
+    to{opacity:1;transform:none}
+  }
+  .grade-desc {
+    color: var(--text-muted);
+    margin: .5rem 0 2rem;
+    font-size: .9rem;
+  }
+
+  /* ── FINAL SCREEN ── */
+  #finalScreen .content {
+    text-align: center;
+    z-index: 1;
+    max-width: 600px;
+    width: 90%;
+  }
+  .transcript {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    margin: 1.5rem 0;
+    text-align: left;
+  }
+  .transcript-header {
+    text-align: center;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .transcript-title {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 1.3rem;
+    color: var(--accent2);
+  }
+  .transcript-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(42,42,74,0.5);
+    font-size: .9rem;
+  }
+  .transcript-row:last-child { border-bottom: none; }
+  .tr-subject { color: var(--text-muted); }
+  .tr-credit { color: var(--text-muted); font-size: .8rem; }
+  .tr-grade {
+    font-family: 'Press Start 2P', monospace;
+    font-size: .9rem;
+  }
+  .tr-gpa { font-size: .8rem; color: var(--text-muted); }
+  .gpa-total {
+    text-align: center;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 2px solid var(--border);
+  }
+  .gpa-number {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 2rem;
+    color: var(--accent);
+    margin: .5rem 0;
+  }
+  .scholarship-msg {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 1.8rem;
+    padding: 16px;
+    border-radius: 12px;
+    margin: 1rem 0;
+    animation: scholarIn .6s cubic-bezier(0.175,0.885,0.32,1.275) both;
+  }
+  .scholarship-yes {
+    background: linear-gradient(135deg, rgba(0,212,170,.2), rgba(0,212,170,.05));
+    border: 2px solid var(--accent3);
+    color: var(--accent3);
+    text-shadow: 0 0 20px var(--glow3);
+  }
+  .scholarship-no {
+    background: linear-gradient(135deg, rgba(233,69,96,.2), rgba(233,69,96,.05));
+    border: 2px solid var(--accent);
+    color: var(--accent);
+    text-shadow: 0 0 20px var(--glow);
+  }
+  @keyframes scholarIn {
+    from{opacity:0;transform:translateY(20px) scale(0.9)}
+    to{opacity:1;transform:none}
+  }
+
+  /* ── COUNTDOWN OVERLAY ── */
+  #countdown {
+    position: fixed;
+    inset: 0;
+    background: rgba(10,10,20,.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(5rem,20vw,12rem);
+    color: var(--accent);
+    text-shadow: 0 0 80px var(--glow);
+    animation: countFade .8s ease-out;
+    display: none;
+  }
+  @keyframes countFade {
+    0%{transform:scale(1.5);opacity:0}
+    50%{opacity:1}
+    100%{transform:scale(.8);opacity:0}
+  }
+
+  /* ── GAME OVER MINI ── */
+  .game-over-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(10,10,20,.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    gap: 16px;
+  }
+  .game-over-text {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(1.5rem, 5vw, 3rem);
+    color: var(--accent);
+    text-shadow: 0 0 40px var(--glow);
+    animation: fadeIn .5s ease;
+  }
+
+  /* ── RHYTHM GAME specific ── */
+  #rhythmLanes {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    background: rgba(18,18,31,0.95);
+    border-top: 1px solid var(--border);
+  }
+  .rhythm-lane-btn {
+    width: 70px;
+    height: 60px;
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Press Start 2P', monospace;
+    font-size: .7rem;
+    cursor: pointer;
+    transition: background .1s, transform .1s, box-shadow .1s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    user-select: none;
+  }
+  .rhythm-lane-btn.hit {
+    background: var(--accent3);
+    border-color: var(--accent3);
+    box-shadow: 0 0 20px var(--glow3);
+    transform: scale(.95);
+  }
+  .rhythm-lane-btn.miss {
+    background: rgba(233,69,96,.3);
+    border-color: var(--accent);
+  }
+  .key-label {
+    font-size: .6rem;
+    color: var(--text-muted);
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* Floating particles */
+  .particle {
+    position: fixed;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--accent);
+    pointer-events: none;
+    z-index: 1;
+    animation: particleFloat linear infinite;
+  }
+  @keyframes particleFloat {
+    0% { transform: translateY(100vh) translateX(0); opacity: .8; }
+    100% { transform: translateY(-10vh) translateX(var(--dx)); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Floating particles -->
+<div id="particles"></div>
+
+<!-- ── START SCREEN ── -->
+<div class="screen" id="startScreen">
+  <div class="content">
+    <div class="game-title">학점을<span>잡아라!</span></div>
+    <p class="subtitle">Grade Rush · 6 Slots · 3 Games · 1 Destiny</p>
+    <div class="nickname-box">
+      <input class="nickname-input" id="nicknameInput" type="text" placeholder="닉네임을 입력하세요" maxlength="10" autocomplete="off">
+      <button class="btn" id="startBtn">시작!</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SLOT SCREEN ── -->
+<div class="screen hidden" id="slotScreen">
+  <div class="content">
+    <div class="slot-title">📋 수강신청</div>
+    <div class="slot-subtitle">이번 학기 학점이 결정됩니다</div>
+    <div class="slots-container" id="slotsContainer"></div>
+    <div class="slot-result-strip" id="resultStrip"></div>
+    <button class="btn yellow" id="spinBtn" style="margin-top:1.5rem;font-size:1rem;padding:16px 40px;">🎰 수강신청 시작!</button>
+  </div>
+</div>
+
+<!-- ── GAME SCREEN ── -->
+<div class="screen hidden" id="gameScreen">
+  <div class="content">
+    <div class="game-header">
+      <div class="game-info-left" id="gameInfoLeft">–</div>
+      <div class="game-stats">
+        <div class="stat-item">
+          <span class="stat-label">TIME</span>
+          <span class="stat-value" id="statTime">60</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label" id="statScoreLabel">SCORE</span>
+          <span class="stat-value" id="statScore">0</span>
+        </div>
+      </div>
+    </div>
+    <div style="position:relative;flex:1;overflow:hidden;" id="canvasWrapper">
+      <canvas id="gameCanvas"></canvas>
+      <div id="gameOverOverlay" class="game-over-overlay" style="display:none">
+        <div class="game-over-text">TIME'S UP!</div>
+        <div id="gameOverScore" style="font-size:1rem;color:var(--text-muted)">Score: 0</div>
+        <button class="btn green" id="gameOverNextBtn">다음 →</button>
+      </div>
+    </div>
+    <div id="rhythmLanes" style="display:none"></div>
+  </div>
+</div>
+
+<!-- ── GRADE SCREEN ── -->
+<div class="screen hidden" id="gradeScreen">
+  <div class="content">
+    <p style="color:var(--text-muted);letter-spacing:3px;font-size:.8rem;text-transform:uppercase;margin-bottom:.5rem" id="gradeSubject">과목명</p>
+    <h2 style="font-family:'Black Han Sans',sans-serif;font-size:1.5rem;margin-bottom:1rem" id="gradeTitle">결과</h2>
+    <div class="grade-display" id="gradeLetter">A</div>
+    <p class="grade-desc" id="gradeDesc">–</p>
+    <button class="btn" id="gradeNextBtn" style="margin-top:1rem">다음 게임 →</button>
+  </div>
+</div>
+
+<!-- ── FINAL SCREEN ── -->
+<div class="screen hidden" id="finalScreen">
+  <div class="content">
+    <div style="font-family:'Black Han Sans',sans-serif;font-size:2rem;margin-bottom:.5rem">📊 최종 성적표</div>
+    <div class="transcript" id="transcriptTable"></div>
+    <div id="scholarshipMsg" class="scholarship-msg"></div>
+    <button class="btn" id="restartBtn" style="margin-top:.5rem">🔄 다시 시작</button>
+  </div>
+</div>
+
+<!-- ── HUD ── -->
+<div id="hud">
+  <div class="hud-nickname" id="hudNickname"></div>
+  <div class="hud-credits" id="hudCredits"></div>
+</div>
+
+<!-- Countdown overlay -->
+<div id="countdown"></div>
+
+<script>
+// ─── PARTICLE INIT ───
+(function(){
+  const container = document.getElementById('particles');
+  const colors = ['#e94560','#f5a623','#00d4aa','#7b68ee'];
+  for(let i=0;i<15;i++){
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random()*100+'vw';
+    p.style.background = colors[Math.floor(Math.random()*colors.length)];
+    p.style.setProperty('--dx', (Math.random()*100-50)+'px');
+    p.style.animationDuration = (8+Math.random()*12)+'s';
+    p.style.animationDelay = (-Math.random()*20)+'s';
+    p.style.opacity = .3+Math.random()*.5;
+    container.appendChild(p);
+  }
+})();
+
+// ─── STATE ───
+const state = {
+  nickname: '',
+  slots: [],        // array of 6 credits [1,2,3,...]
+  currentSlot: 0,   // 0-5
+  results: [],      // {credit, grade, gpa, score, subject}
+};
+
+const SUBJECTS = ['교양필수A','전공기초','전공심화','교양선택','전공필수','졸업프로젝트'];
+const GAME_DURATION = 60; // seconds
+
+// ─── SCREEN UTILS ───
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+}
+
+// ─── HUD ───
+function updateHUD(){
+  const hud = document.getElementById('hud');
+  hud.style.display = 'block';
+  document.getElementById('hudNickname').textContent = state.nickname;
+  const credits = document.getElementById('hudCredits');
+  credits.innerHTML = state.slots.map((c,i)=>{
+    const r = state.results[i];
+    const grade = r ? r.grade : '?';
+    return `<span class="hud-credit c${c}">${i+1}번 ${c}학점${r?' '+grade:''}</span>`;
+  }).join('');
+}
+
+// ─── START ───
+document.getElementById('startBtn').addEventListener('click', startGame);
+document.getElementById('nicknameInput').addEventListener('keydown', e=>{ if(e.key==='Enter') startGame(); });
+
+function startGame(){
+  const name = document.getElementById('nicknameInput').value.trim();
+  if(!name){ document.getElementById('nicknameInput').focus(); return; }
+  state.nickname = name;
+  state.slots = [];
+  state.currentSlot = 0;
+  state.results = [];
+  showScreen('slotScreen');
+  buildSlots();
+}
+
+// ─── SLOT MACHINE ───
+function buildSlots(){
+  const container = document.getElementById('slotsContainer');
+  const strip = document.getElementById('resultStrip');
+  container.innerHTML = '';
+  strip.innerHTML = '';
+  for(let i=0;i<6;i++){
+    const div = document.createElement('div');
+    div.className = 'slot';
+    div.id = `slot${i}`;
+    div.innerHTML = `<span class="slot-num">?</span><span class="slot-label">${SUBJECTS[i].slice(0,5)}</span>`;
+    container.appendChild(div);
+
+    const badge = document.createElement('span');
+    badge.className='credit-badge';
+    badge.id=`badge${i}`;
+    badge.textContent = `${i+1}번: ?학점`;
+    strip.appendChild(badge);
+  }
+  document.getElementById('spinBtn').disabled = false;
+}
+
+document.getElementById('spinBtn').addEventListener('click', function(){
+  this.disabled = true;
+  this.textContent = '🎰 수강신청 중...';
+  spinAll();
+});
+
+function randCredit(){
+  const r = Math.random();
+  if(r < 0.33) return 3;
+  if(r < 0.66) return 2;
+  return 1;
+}
+
+async function spinAll(){
+  const finals = Array.from({length:6}, ()=>randCredit());
+  for(let i=0;i<6;i++){
+    const slotEl = document.getElementById(`slot${i}`);
+    slotEl.classList.add('current');
+    const numEl = slotEl.querySelector('.slot-num');
+    numEl.classList.add('slot-num');
+    slotEl.classList.add('spinning');
+
+    // spin animation
+    let tick = 0;
+    const interval = setInterval(()=>{
+      numEl.textContent = [1,2,3][tick%3];
+      tick++;
+    }, 80);
+
+    await sleep(600 + i*200);
+    clearInterval(interval);
+    slotEl.classList.remove('spinning','current');
+
+    const val = finals[i];
+    numEl.textContent = val;
+    slotEl.classList.add(`done-${val}`);
+    state.slots.push(val);
+
+    const badge = document.getElementById(`badge${i}`);
+    badge.textContent = `${i+1}번: ${val}학점`;
+    badge.classList.add('active');
+
+    await sleep(200);
+  }
+
+  await sleep(800);
+  updateHUD();
+
+  // Show start button
+  const btn = document.getElementById('spinBtn');
+  btn.textContent = '🎮 게임 시작!';
+  btn.className = 'btn green';
+  btn.disabled = false;
+  btn.onclick = () => startNextGame();
+}
+
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+// ─── GAME FLOW ───
+async function startNextGame(){
+  if(state.currentSlot >= 6){
+    showFinalScreen();
+    return;
+  }
+  const credit = state.slots[state.currentSlot];
+  await showCountdown();
+  showScreen('gameScreen');
+  document.getElementById('gameInfoLeft').textContent =
+    `${state.currentSlot+1}/6 · ${SUBJECTS[state.currentSlot]} · ${credit}학점`;
+  document.getElementById('gameOverOverlay').style.display = 'none';
+
+  if(credit === 1) startObstacleGame();
+  else if(credit === 2) startRhythmGame();
+  else startBombGame();
+}
+
+async function showCountdown(){
+  const el = document.getElementById('countdown');
+  el.style.display = 'flex';
+  for(let n=3;n>=1;n--){
+    el.textContent = n;
+    el.style.animation = 'none';
+    void el.offsetWidth;
+    el.style.animation = 'countFade .8s ease-out forwards';
+    await sleep(800);
+  }
+  el.textContent = 'GO!';
+  el.style.animation = 'none';
+  void el.offsetWidth;
+  el.style.animation = 'countFade .8s ease-out forwards';
+  await sleep(700);
+  el.style.display = 'none';
+}
+
+// ─── GAME ENGINE (shared) ───
+let gameLoop = null;
+let gameActive = false;
+let timeLeft = GAME_DURATION;
+let score = 0;
+let timerInterval = null;
+
+function getCanvas(){
+  const canvas = document.getElementById('gameCanvas');
+  const wrapper = document.getElementById('canvasWrapper');
+  canvas.width = wrapper.clientWidth;
+  canvas.height = wrapper.clientHeight;
+  return canvas;
+}
+
+function startTimer(onEnd){
+  timeLeft = GAME_DURATION;
+  document.getElementById('statTime').textContent = timeLeft;
+  clearInterval(timerInterval);
+  timerInterval = setInterval(()=>{
+    timeLeft--;
+    document.getElementById('statTime').textContent = timeLeft;
+    if(timeLeft<=0){
+      clearInterval(timerInterval);
+      gameActive = false;
+      cancelAnimationFrame(gameLoop);
+      onEnd();
+    }
+  }, 1000);
+}
+
+function stopGame(){
+  clearInterval(timerInterval);
+  gameActive = false;
+  cancelAnimationFrame(gameLoop);
+}
+
+function showGameOver(finalScore, label){
+  document.getElementById('gameOverOverlay').style.display = 'flex';
+  document.getElementById('gameOverScore').textContent = `${label}: ${finalScore}`;
+  document.getElementById('gameOverNextBtn').onclick = ()=>{
+    calcAndShowGrade(finalScore);
+  };
+}
+
+function calcAndShowGrade(finalScore){
+  const credit = state.slots[state.currentSlot];
+  let grade, gpa;
+  // Thresholds per game type
+  const thresholds = getThresholds(credit, finalScore);
+  if(finalScore >= thresholds.A){ grade='A'; gpa=4.0; }
+  else if(finalScore >= thresholds.B){ grade='B'; gpa=3.0; }
+  else { grade='C'; gpa=2.0; }
+
+  state.results.push({
+    credit, grade, gpa,
+    score: finalScore,
+    subject: SUBJECTS[state.currentSlot]
+  });
+  state.currentSlot++;
+  updateHUD();
+  showGradeScreen(grade, gpa, credit, finalScore);
+}
+
+function getThresholds(credit, score){
+  if(credit===1) return { A:30, B:15 };   // obstacles avoided
+  if(credit===2) return { A:25, B:12 };   // tiles hit
+  if(credit===3) return { A:45, B:25 };   // seconds survived
+  return { A:50, B:25 };
+}
+
+function showGradeScreen(grade, gpa, credit, score){
+  showScreen('gradeScreen');
+  const idx = state.currentSlot - 1;
+  document.getElementById('gradeSubject').textContent = SUBJECTS[idx];
+  document.getElementById('gradeTitle').textContent = `${credit}학점 · 게임 종료`;
+  const letterEl = document.getElementById('gradeLetter');
+  letterEl.textContent = grade;
+  letterEl.className = `grade-display grade-${grade}`;
+  document.getElementById('gradeDesc').textContent = `점수: ${score} · GPA: ${gpa.toFixed(1)}`;
+  document.getElementById('gradeNextBtn').onclick = ()=>{
+    if(state.currentSlot >= 6) showFinalScreen();
+    else startNextGame();
+  };
+}
+
+// ─── FINAL SCREEN ───
+function showFinalScreen(){
+  document.getElementById('hud').style.display = 'none';
+  showScreen('finalScreen');
+
+  const tbody = state.results.map((r,i)=>{
+    const gradeColors = {A:'var(--accent3)',B:'var(--accent2)',C:'var(--accent4)'};
+    return `<div class="transcript-row">
+      <div>
+        <div>${r.subject}</div>
+        <div class="tr-credit">${r.credit}학점</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px">
+        <span class="tr-gpa">${r.gpa.toFixed(1)}</span>
+        <span class="tr-grade" style="color:${gradeColors[r.grade]}">${r.grade}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  const totalCredits = state.results.reduce((a,r)=>a+r.credit,0);
+  const weightedSum = state.results.reduce((a,r)=>a+r.gpa*r.credit,0);
+  const gpa = weightedSum / totalCredits;
+
+  document.getElementById('transcriptTable').innerHTML = `
+    <div class="transcript-header">
+      <div class="transcript-title">📋 ${state.nickname}님의 성적표</div>
+      <div style="color:var(--text-muted);font-size:.75rem;margin-top:4px">총 ${totalCredits}학점 이수</div>
+    </div>
+    ${tbody}
+    <div class="gpa-total">
+      <div style="color:var(--text-muted);font-size:.8rem;letter-spacing:2px">평균 학점</div>
+      <div class="gpa-number">${gpa.toFixed(2)}</div>
+    </div>
+  `;
+
+  const msgEl = document.getElementById('scholarshipMsg');
+  if(gpa >= 3.5){
+    msgEl.textContent = '🏆 장학금 수령!!';
+    msgEl.className = 'scholarship-msg scholarship-yes';
+  } else {
+    msgEl.textContent = '😭 재수강...';
+    msgEl.className = 'scholarship-msg scholarship-no';
+  }
+}
+
+document.getElementById('restartBtn').addEventListener('click', ()=>{
+  showScreen('startScreen');
+  document.getElementById('hud').style.display = 'none';
+  document.getElementById('nicknameInput').value = '';
+});
+
+// ════════════════════════════════════════════
+// ─── GAME 1: OBSTACLE DODGE (1학점) ───
+// ════════════════════════════════════════════
+function startObstacleGame(){
+  document.getElementById('statScoreLabel').textContent = '회피';
+  document.getElementById('statScore').textContent = '0';
+  document.getElementById('rhythmLanes').style.display = 'none';
+
+  const canvas = getCanvas();
+  const ctx = canvas.getContext('2d');
+
+  score = 0;
+  gameActive = true;
+
+  // Player
+  const player = {
+    x: 80,
+    y: canvas.height * 0.7,
+    w: 44, h: 50,
+    vy: 0,
+    onGround: true,
+    jumping: false,
+    frame: 0
+  };
+  const ground = canvas.height * 0.7 + player.h;
+  const GRAVITY = 0.6;
+  const JUMP_FORCE = -13;
+
+  let obstacles = [];
+  let obstacleTimer = 0;
+  let obstacleInterval = 90;
+  let gameSpeed = 4;
+  let frameCount = 0;
+  let dodgedCount = 0;
+  let bgOffset = 0;
+
+  function jump(){
+    if(player.onGround){
+      player.vy = JUMP_FORCE;
+      player.onGround = false;
+    }
+  }
+
+  function handleKey(e){
+    if((e.code==='Space'||e.code==='ArrowUp') && gameActive) jump();
+  }
+  document.addEventListener('keydown', handleKey);
+  canvas.addEventListener('click', ()=>{ if(gameActive) jump(); });
+
+  function spawnObstacle(){
+    const types = ['cactus','book','desk'];
+    const type = types[Math.floor(Math.random()*types.length)];
+    const h = type==='desk' ? 36 : (30+Math.random()*30);
+    obstacles.push({
+      x: canvas.width + 20,
+      w: type==='desk' ? 60 : 24,
+      h,
+      type,
+      passed: false
+    });
+  }
+
+  function drawPlayer(x, y, w, h, frame){
+    // Simple pixel-art style student
+    const f = Math.floor(frame/10)%2;
+    ctx.fillStyle = '#f5a623';
+    // head
+    ctx.fillRect(x+10, y, 24, 22);
+    // body
+    ctx.fillStyle = '#4a90d9';
+    ctx.fillRect(x+8, y+22, 28, 20);
+    // legs
+    ctx.fillStyle = '#1a1a2e';
+    if(f===0){
+      ctx.fillRect(x+10, y+42, 10, 8);
+      ctx.fillRect(x+24, y+38, 10, 12);
+    } else {
+      ctx.fillRect(x+10, y+38, 10, 12);
+      ctx.fillRect(x+24, y+42, 10, 8);
+    }
+    // eyes
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(x+15, y+6, 4, 4);
+    ctx.fillRect(x+25, y+6, 4, 4);
+    // backpack
+    ctx.fillStyle = '#e94560';
+    ctx.fillRect(x+36, y+22, 8, 16);
+  }
+
+  function drawObstacle(obs){
+    const y = ground - obs.h;
+    if(obs.type==='cactus'){
+      ctx.fillStyle = '#00d4aa';
+      ctx.fillRect(obs.x+8, y, 8, obs.h);
+      ctx.fillRect(obs.x, y+10, 24, 8);
+      ctx.fillRect(obs.x+4, y+4, 4, 10);
+      ctx.fillRect(obs.x+16, y+8, 4, 8);
+    } else if(obs.type==='book'){
+      ctx.fillStyle = '#e94560';
+      ctx.fillRect(obs.x, y, obs.w, obs.h);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(obs.x+3, y+4, obs.w-6, 4);
+      ctx.fillRect(obs.x+3, y+12, obs.w-6, 4);
+      ctx.fillStyle = '#f5a623';
+      ctx.fillRect(obs.x+obs.w/2-2, y, 4, obs.h);
+    } else {
+      ctx.fillStyle = '#7b68ee';
+      ctx.fillRect(obs.x, y+14, obs.w, obs.h-14);
+      ctx.fillStyle = '#9a88ff';
+      ctx.fillRect(obs.x-4, y, obs.w+8, 14);
+      // legs
+      ctx.fillStyle = '#5a4a8a';
+      ctx.fillRect(obs.x+4, y+obs.h-2, 10, 8);
+      ctx.fillRect(obs.x+obs.w-14, y+obs.h-2, 10, 8);
+    }
+  }
+
+  function loop(){
+    if(!gameActive) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Background
+    bgOffset = (bgOffset + gameSpeed*0.3) % canvas.width;
+    // sky gradient
+    const sky = ctx.createLinearGradient(0,0,0,canvas.height);
+    sky.addColorStop(0,'#0a0a14');
+    sky.addColorStop(1,'#1a1a2e');
+    ctx.fillStyle = sky;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    // Stars/dots
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    for(let s=0;s<20;s++){
+      const sx = ((s*137+bgOffset*0.1)%canvas.width);
+      const sy = (s*73)%( canvas.height*0.6);
+      ctx.fillRect(sx,sy,2,2);
+    }
+
+    // Ground
+    ctx.fillStyle = '#2a2a4a';
+    ctx.fillRect(0, ground, canvas.width, canvas.height-ground);
+    ctx.fillStyle = '#e94560';
+    ctx.fillRect(0, ground, canvas.width, 3);
+
+    // Running lines on ground
+    ctx.fillStyle = 'rgba(233,69,96,0.2)';
+    for(let l=0;l<8;l++){
+      const lx = canvas.width - ((bgOffset*2 + l*(canvas.width/8)) % canvas.width);
+      ctx.fillRect(lx, ground+6, 40, 2);
+    }
+
+    // Player
+    player.vy += GRAVITY;
+    player.y += player.vy;
+    if(player.y >= canvas.height * 0.7){
+      player.y = canvas.height * 0.7;
+      player.vy = 0;
+      player.onGround = true;
+    }
+    player.frame++;
+    drawPlayer(player.x, player.y, player.w, player.h, player.onGround ? player.frame : 0);
+
+    // Obstacles
+    obstacleTimer++;
+    if(obstacleTimer >= obstacleInterval){
+      spawnObstacle();
+      obstacleTimer = 0;
+      obstacleInterval = Math.max(45, obstacleInterval - 1);
+      gameSpeed = Math.min(9, gameSpeed + 0.05);
+    }
+
+    for(let i=obstacles.length-1;i>=0;i--){
+      const obs = obstacles[i];
+      obs.x -= gameSpeed;
+      drawObstacle(obs);
+
+      // collision
+      const px = player.x+6, py = player.y+4, pw = player.w-12, ph = player.h-4;
+      const oy = ground - obs.h;
+      if(px < obs.x+obs.w && px+pw > obs.x && py < oy+obs.h && py+ph > oy){
+        stopGame();
+        document.removeEventListener('keydown', handleKey);
+        document.getElementById('gameOverOverlay').style.display='flex';
+        document.getElementById('gameOverScore').textContent = `회피: ${dodgedCount}`;
+        document.getElementById('gameOverNextBtn').onclick = ()=> calcAndShowGrade(dodgedCount);
+        return;
+      }
+
+      if(!obs.passed && obs.x + obs.w < player.x){
+        obs.passed = true;
+        dodgedCount++;
+        score = dodgedCount;
+        document.getElementById('statScore').textContent = dodgedCount;
+      }
+
+      if(obs.x < -100) obstacles.splice(i,1);
+    }
+
+    frameCount++;
+    gameLoop = requestAnimationFrame(loop);
+  }
+
+  startTimer(()=>{
+    document.removeEventListener('keydown', handleKey);
+    showGameOver(dodgedCount, '회피');
+  });
+  gameLoop = requestAnimationFrame(loop);
+}
+
+// ════════════════════════════════════════════
+// ─── GAME 2: RHYTHM GAME (2학점) ───
+// ════════════════════════════════════════════
+function startRhythmGame(){
+  document.getElementById('statScoreLabel').textContent = 'HIT';
+  document.getElementById('statScore').textContent = '0';
+
+  const lanesEl = document.getElementById('rhythmLanes');
+  lanesEl.style.display = 'flex';
+  lanesEl.innerHTML = '';
+
+  const LANES = 5;
+  const KEYS = ['A','S','D','F','G'];
+  const COLORS = ['#e94560','#f5a623','#00d4aa','#7b68ee','#4a90d9'];
+  const laneButtons = [];
+
+  for(let i=0;i<LANES;i++){
+    const btn = document.createElement('button');
+    btn.className = 'rhythm-lane-btn';
+    btn.innerHTML = `<span style="font-size:1.2rem">${['♩','♪','♫','♬','🎵'][i]}</span><span class="key-label">${KEYS[i]}</span>`;
+    btn.style.borderColor = COLORS[i];
+    laneButtons.push(btn);
+    lanesEl.appendChild(btn);
+  }
+
+  const canvas = getCanvas();
+  const ctx = canvas.getContext('2d');
+
+  let tiles = [];
+  let hitCount = 0;
+  let missCount = 0;
+  let spawnTimer = 0;
+  let spawnInterval = 45;
+  let gameSpeed = 3.5;
+  let frameCount = 0;
+
+  gameActive = true;
+
+  const laneW = canvas.width / LANES;
+  const HIT_ZONE_Y = canvas.height - 80;
+  const HIT_ZONE_H = 40;
+
+  function flashLane(idx, type){
+    const btn = laneButtons[idx];
+    btn.classList.remove('hit','miss');
+    void btn.offsetWidth;
+    btn.classList.add(type);
+    setTimeout(()=>btn.classList.remove(type), 200);
+  }
+
+  function tryHit(laneIdx){
+    if(!gameActive) return;
+    let bestTile = null, bestDist = Infinity;
+    for(const t of tiles){
+      if(t.lane !== laneIdx || t.hit) continue;
+      const cy = t.y + t.h/2;
+      const dist = Math.abs(cy - (HIT_ZONE_Y + HIT_ZONE_H/2));
+      if(dist < 60 && dist < bestDist){ bestDist = dist; bestTile = t; }
+    }
+    if(bestTile){
+      bestTile.hit = true;
+      hitCount++;
+      score = hitCount;
+      document.getElementById('statScore').textContent = hitCount;
+      flashLane(laneIdx, 'hit');
+      // flash effect
+      bestTile.flash = 8;
+    } else {
+      flashLane(laneIdx, 'miss');
+    }
+  }
+
+  function keyHandler(e){
+    if(!gameActive) return;
+    const idx = KEYS.indexOf(e.key.toUpperCase());
+    if(idx !== -1){ e.preventDefault(); tryHit(idx); }
+  }
+  document.addEventListener('keydown', keyHandler);
+  laneButtons.forEach((btn, i)=> btn.addEventListener('click', ()=>tryHit(i)));
+  laneButtons.forEach((btn, i)=> btn.addEventListener('touchstart', (e)=>{ e.preventDefault(); tryHit(i); }));
+
+  function spawnTile(){
+    const lane = Math.floor(Math.random()*LANES);
+    tiles.push({ lane, x: lane*laneW+4, y: -80, w: laneW-8, h: 60+Math.random()*40, hit: false, flash:0 });
+  }
+
+  function loop(){
+    if(!gameActive) return;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    // BG
+    ctx.fillStyle = '#0a0a14';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    // Lane dividers
+    for(let i=0;i<=LANES;i++){
+      ctx.fillStyle = 'rgba(42,42,74,0.8)';
+      ctx.fillRect(i*laneW-1,0,2,canvas.height);
+    }
+
+    // Lane colors (faint)
+    for(let i=0;i<LANES;i++){
+      ctx.fillStyle = COLORS[i]+'08';
+      ctx.fillRect(i*laneW,0,laneW,canvas.height);
+    }
+
+    // HIT zone
+    for(let i=0;i<LANES;i++){
+      ctx.fillStyle = COLORS[i]+'25';
+      ctx.fillRect(i*laneW+4, HIT_ZONE_Y, laneW-8, HIT_ZONE_H);
+      ctx.strokeStyle = COLORS[i]+'80';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(i*laneW+4, HIT_ZONE_Y, laneW-8, HIT_ZONE_H);
+    }
+
+    // Spawn
+    spawnTimer++;
+    if(spawnTimer >= spawnInterval){
+      spawnTile();
+      spawnTimer = 0;
+      spawnInterval = Math.max(28, spawnInterval - 0.3);
+      gameSpeed = Math.min(7, gameSpeed + 0.02);
+    }
+
+    // Draw tiles
+    for(let i=tiles.length-1;i>=0;i--){
+      const t = tiles[i];
+      t.y += gameSpeed;
+
+      if(t.hit){
+        if(t.flash > 0){
+          ctx.fillStyle = `rgba(255,255,255,${t.flash/8*0.6})`;
+          ctx.fillRect(t.x, t.y, t.w, t.h);
+          t.flash--;
+        }
+        if(t.flash <= 0) tiles.splice(i,1);
+        continue;
+      }
+
+      const col = COLORS[t.lane];
+      // gradient tile
+      const g = ctx.createLinearGradient(t.x, t.y, t.x, t.y+t.h);
+      g.addColorStop(0, col+'dd');
+      g.addColorStop(1, col+'66');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.roundRect(t.x, t.y, t.w, t.h, 8);
+      ctx.fill();
+
+      // shine
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      ctx.beginPath();
+      ctx.roundRect(t.x+4, t.y+4, t.w-8, 10, 4);
+      ctx.fill();
+
+      // check if missed
+      if(t.y > canvas.height){
+        tiles.splice(i,1);
+      }
+    }
+
+    // Beat indicator
+    const beat = Math.sin(frameCount * 0.1);
+    ctx.fillStyle = `rgba(233,69,96,${0.05 + beat*0.03})`;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    frameCount++;
+    gameLoop = requestAnimationFrame(loop);
+  }
+
+  startTimer(()=>{
+    document.removeEventListener('keydown', keyHandler);
+    lanesEl.style.display = 'none';
+    showGameOver(hitCount, 'HIT');
+  });
+  gameLoop = requestAnimationFrame(loop);
+}
+
+// ════════════════════════════════════════════
+// ─── GAME 3: BOMB DODGE (3학점) ───
+// ════════════════════════════════════════════
+function startBombGame(){
+  document.getElementById('statScoreLabel').textContent = 'SEC';
+  document.getElementById('statScore').textContent = '0';
+  document.getElementById('rhythmLanes').style.display = 'none';
+
+  const canvas = getCanvas();
+  const ctx = canvas.getContext('2d');
+
+  const COLS = 6;
+  const cellW = Math.min(canvas.width / COLS, 100);
+  const startX = (canvas.width - cellW*COLS) / 2;
+  const playerY = canvas.height - 80;
+  const playerW = cellW - 16;
+  const playerH = 54;
+
+  let playerCol = 2;
+  let bombs = [];
+  let bombTimer = 0;
+  let bombInterval = 60;
+  let bombSpeed = 3;
+  let survived = 0;
+  let frameCount = 0;
+  let flashTimer = 0;
+
+  gameActive = true;
+
+  function movePl(dir){
+    if(!gameActive) return;
+    playerCol = Math.max(0, Math.min(COLS-1, playerCol+dir));
+  }
+
+  function keyHandler(e){
+    if(!gameActive) return;
+    if(e.code==='ArrowLeft') movePl(-1);
+    if(e.code==='ArrowRight') movePl(+1);
+  }
+  document.addEventListener('keydown', keyHandler);
+
+  function spawnBombs(){
+    const cols = [];
+    while(cols.length < 3){
+      const c = Math.floor(Math.random()*COLS);
+      if(!cols.includes(c)) cols.push(c);
+    }
+    for(const c of cols){
+      bombs.push({ col:c, y:-60, w:cellW-12, h:54 });
+    }
+  }
+
+  function drawF(x, y, w, h, color){
+    // F-shape bomb
+    const bw = Math.floor(w*0.28);
+    const bh = Math.floor(h*0.14);
+    // Main vertical bar
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.roundRect(x + w/2 - bw/2, y, bw, h, 4);
+    ctx.fill();
+    // Top horizontal
+    ctx.fillRect(x + w/2 - bw/2, y, w*0.55, bh);
+    // Middle horizontal
+    ctx.fillRect(x + w/2 - bw/2, y + h*0.44, w*0.42, bh);
+    // Fuse
+    ctx.strokeStyle = '#f5a623';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(x+w/2 + bw/2, y);
+    ctx.quadraticCurveTo(x+w/2+bw, y-12, x+w/2+bw/2+4, y-20);
+    ctx.stroke();
+    // Spark
+    if(frameCount%8 < 4){
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(x+w/2+bw/2+4, y-22, 4, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = '#f5a623';
+      ctx.beginPath();
+      ctx.arc(x+w/2+bw/2+4, y-22, 2, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
+
+  function drawPlayer(col){
+    const x = startX + col*cellW + (cellW-playerW)/2;
+    const y = playerY;
+    // Body
+    ctx.fillStyle = '#4a90d9';
+    ctx.beginPath();
+    ctx.roundRect(x, y+18, playerW, 28, 6);
+    ctx.fill();
+    // Head
+    ctx.fillStyle = '#f5a623';
+    ctx.beginPath();
+    ctx.arc(x+playerW/2, y+10, 14, 0, Math.PI*2);
+    ctx.fill();
+    // Eyes (panicked)
+    ctx.fillStyle = '#1a1a2e';
+    ctx.beginPath();
+    ctx.arc(x+playerW/2-5, y+8, 3, 0, Math.PI*2);
+    ctx.arc(x+playerW/2+5, y+8, 3, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = 'white';
+    ctx.beginPath();
+    ctx.arc(x+playerW/2-4, y+7, 1.5, 0, Math.PI*2);
+    ctx.arc(x+playerW/2+6, y+7, 1.5, 0, Math.PI*2);
+    ctx.fill();
+    // Legs
+    const lf = Math.floor(frameCount/8)%2;
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(x+playerW/2-12, y+46, 10, lf?12:8);
+    ctx.fillRect(x+playerW/2+2, y+46, 10, lf?8:12);
+    // Arms raised in panic
+    ctx.strokeStyle = '#f5a623';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x+6, y+28);
+    ctx.lineTo(x-6, y+16);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x+playerW-6, y+28);
+    ctx.lineTo(x+playerW+6, y+16);
+    ctx.stroke();
+  }
+
+  function loop(){
+    if(!gameActive) return;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    // BG
+    if(flashTimer > 0){
+      ctx.fillStyle = `rgba(233,69,96,${flashTimer/10*0.3})`;
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      flashTimer--;
+    } else {
+      ctx.fillStyle = '#0a0a14';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+    }
+
+    // Grid
+    for(let c=0;c<COLS;c++){
+      const x = startX + c*cellW;
+      ctx.fillStyle = c%2===0 ? '#12121f' : '#0e0e1a';
+      ctx.fillRect(x, 0, cellW, canvas.height);
+      ctx.fillStyle = '#2a2a4a';
+      ctx.fillRect(x, 0, 1, canvas.height);
+    }
+
+    // Player platform
+    for(let c=0;c<COLS;c++){
+      const x = startX + c*cellW;
+      ctx.fillStyle = c===playerCol ? '#2a2a5a' : '#1a1a2e';
+      ctx.fillRect(x, playerY-5, cellW, canvas.height-(playerY-5));
+      if(c===playerCol){
+        ctx.fillStyle = '#4a4aaa';
+        ctx.fillRect(x, playerY-5, cellW, 3);
+      }
+    }
+
+    // Bombs
+    bombTimer++;
+    if(bombTimer >= bombInterval){
+      spawnBombs();
+      bombTimer = 0;
+      bombInterval = Math.max(35, bombInterval - 1);
+      bombSpeed = Math.min(10, bombSpeed + 0.1);
+    }
+
+    const BOMB_COLORS = ['#e94560','#f5a623','#7b68ee'];
+    for(let i=bombs.length-1;i>=0;i--){
+      const b = bombs[i];
+      b.y += bombSpeed;
+      const bx = startX + b.col*cellW + 6;
+      const color = BOMB_COLORS[i%3];
+      drawF(bx, b.y, b.w, b.h, color);
+
+      // Collision check
+      const px = startX + playerCol*cellW + (cellW-playerW)/2;
+      if(b.col === playerCol &&
+         b.y + b.h > playerY &&
+         b.y < playerY + playerH){
+        stopGame();
+        document.removeEventListener('keydown', keyHandler);
+        showGameOver(survived, 'SEC');
+        return;
+      }
+
+      if(b.y > canvas.height) bombs.splice(i,1);
+    }
+
+    drawPlayer(playerCol);
+
+    // Survived time display
+    if(frameCount % 60 === 0 && gameActive){
+      survived++;
+      document.getElementById('statScore').textContent = survived;
+    }
+
+    frameCount++;
+    gameLoop = requestAnimationFrame(loop);
+  }
+
+  startTimer(()=>{
+    document.removeEventListener('keydown', keyHandler);
+    showGameOver(survived, 'SEC');
+  });
+  gameLoop = requestAnimationFrame(loop);
+}
+
+// ── Mobile touch controls for bomb game ──
+document.getElementById('gameCanvas').addEventListener('touchstart', (e)=>{
+  const touch = e.touches[0];
+  const canvas = document.getElementById('gameCanvas');
+  if(touch.clientX < canvas.width/2){
+    document.dispatchEvent(new KeyboardEvent('keydown',{code:'ArrowLeft'}));
+  } else {
+    document.dispatchEvent(new KeyboardEvent('keydown',{code:'ArrowRight'}));
+  }
+});
+
+// ── Initial slot screen setup ──
+buildSlots();
+</script>
+</body>
+</html>
